@@ -7,7 +7,7 @@ import os
 
 def train():
     print("Loading data...")
-    # Robust Pathing: Always find data relative to *this script's* location
+    # Robust Pathing
     base_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(base_dir, 'retail_data.csv')
     model_path = os.path.join(base_dir, 'model.json')
@@ -15,11 +15,11 @@ def train():
     # Load data
     df = pd.read_csv(data_path)
 
-    # Features (X) and Target (y)
-    X = df[['competitor_price', 'is_weekend', 'promotion_active']]
+    # Features (X) - FIX: Added 'my_price' to match services.py inputs
+    X = df[['my_price', 'competitor_price', 'is_weekend', 'promotion_active']]
     y = df['demand']
 
-    # Split data (80% train, 20% test)
+    # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     print("Training XGBoost Regressor...")
@@ -32,10 +32,8 @@ def train():
 
     print("Model Training Complete!")
     print(f"Mean Absolute Error (MAE): {mae:.2f}")
-    print("Interpretation: On average, our prediction is off by only +/- {:.0f} units.".format(mae))
 
-    # Save the model using the Absolute Path
-    # ARCHITECTURE NOTE: We use save_model (JSON) for compatibility/portability
+    # Save the model
     model.save_model(model_path)
     print(f"Success! Model saved to {model_path}")
 
