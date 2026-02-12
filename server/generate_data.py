@@ -2,55 +2,58 @@
 import pandas as pd
 import numpy as np
 import random
+import os
 
-# Architectural Note: 
-# We use a fixed seed (42) to ensure 'reproducible randomness'.
-# This means every time we run this, we get the same "random" numbers,
-# which is crucial for debugging AI models.
-np.random.seed(42)
+# 1. Setup Data
+# ---------------------------------------------------------
+# Create 100 days of data
+days = np.arange(100)
+base_demand = 150
+price_elasticity = -2.5
 
-def generate_retail_data(num_samples=1000):
-    print("Generating simulated retail data...")
-    
-    # 1. Create base features
-    data = {
-        'day_id': np.arange(num_samples),
-        'competitor_price': np.random.uniform(50, 150, num_samples), # Competitor ranges $50-$150
-        'is_weekend': np.random.choice([0, 1], num_samples, p=[0.7, 0.3]), # 30% chance of weekend
-        'promotion_active': np.random.choice([0, 1], num_samples, p=[0.8, 0.2]) # 20% chance of promo
-    }
-    
-    df = pd.DataFrame(data)
-    
-    # 2. Define our "Own Price" strategy (Randomly fluctuate around competitor)
-    # We want the model to learn that OUR price matters relative to THEIRS.
-    df['my_price'] = df['competitor_price'] * np.random.uniform(0.85, 1.15, num_samples)
-    
-    # 3. Simulate Demand (The "Ground Truth" Formula)
-    # Demand = Base - (Price Sensitivity * Price) + (Competitor Impact) + (Weekend Boost)
-    # We add 'noise' (np.random.normal) to make it realistic.
-    base_demand = 200
-    price_sensitivity = 1.5
-    competitor_sensitivity = 0.8
-    
-    df['demand'] = (
-        base_demand 
-        - (df['my_price'] * price_sensitivity) 
-        + (df['competitor_price'] * competitor_sensitivity)
-        + (df['is_weekend'] * 20) # Weekends sell more
-        + (df['promotion_active'] * 30) # Promos sell more
-        + np.random.normal(0, 10, num_samples) # Random noise
-    )
-    
-    # Ensure demand doesn't go negative (business logic constraint)
-    df['demand'] = df['demand'].clip(lower=0).astype(int)
-    
-    # 4. Save to CSV
-    # This file acts as our "Database" for the Hackathon
-    output_path = 'retail_data.csv'
-    df.to_csv(output_path, index=False)
-    print(f"Success! Data saved to {output_path}")
-    print(df.head())
+# Competitor Price (Randomly fluctuating around $100)
+competitor_prices = np.random.normal(100, 15, 100)
 
-if __name__ == "__main__":
-    generate_retail_data()
+# 2. Add Business Context (Weekend & Promotions)
+# ---------------------------------------------------------
+is_weekend = [1 if d % 7 >= 5 else 0 for d in days]
+promotion = [1 if random.random() > 0.8 else 0 for d in days]
+
+# 3. Calculate "My Price" and "Demand"
+# ---------------------------------------------------------
+my_prices = []
+demands = []
+
+for i in range(100):
+    # Strategy: Match competitor but add small random variation
+    my_price = competitor_prices[i] * (1 + np.random.uniform(-0.05, 0.10))
+    
+    # Demand Formula: Base - (Price Diff * Elasticity) + Boosts
+    price_diff = my_price - competitor_prices[i]
+    weekend_boost = 20 if is_weekend[i] else 0
+    promo_boost = 30 if promotion[i] else 0
+    
+    # Calculate demand (ensure it doesn't go negative)
+    demand = base_demand - (price_diff * price_elasticity) + weekend_boost + promo_boost
+    demand = max(0, int(demand + np.random.normal(0, 5)))
+    
+    my_prices.append(my_price)
+    demands.append(demand)
+
+# 4. Save to CSV (The Robust Way)
+# ---------------------------------------------------------
+df = pd.DataFrame({
+    'day_id': days,
+    'competitor_price': competitor_prices,
+    'is_weekend': is_weekend,
+    'promotion_active': promotion,
+    'my_price': my_prices,
+    'demand': demands
+})
+
+# ARCHITECTURE FIX: Use absolute path to ensure file lands in 'server/'
+base_dir = os.path.dirname(os.path.abspath(__file__))
+output_path = os.path.join(base_dir, 'retail_data.csv')
+
+df.to_csv(output_path, index=False)
+print(f"Success! Data saved to {output_path}")
