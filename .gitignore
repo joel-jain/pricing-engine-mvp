@@ -1,0 +1,15 @@
+# .gitignore
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+dist/
+.env
+instance/
+.pytest_cache/
+server/retail_data.csv
+server/model.json
+# We ignore the data/model usually, but for a small hackathon 
+# it is okay to commit them if you want.
+# For now, let's keep them out to simulate real-world practice.
