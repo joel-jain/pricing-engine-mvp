@@ -1,24 +1,20 @@
-blinker
-click
-colorama
+# server/requirements.txt
+
+# --- Core Web Framework ---
+# Why: Used for the API and routing (app.py)
 Flask
-flask-cors
-iniconfig
-itsdangerous
-Jinja2
-joblib
-MarkupSafe
-numpy
-packaging
+Flask-CORS
+
+# --- Data Science & AI ---
+# Why: Used for data manipulation in generate_data.py and services.py
 pandas
-pluggy
-Pygments
-pytest
-python-dateutil
-scikit-learn
-scipy
-six
-threadpoolctl
-tzdata
-Werkzeug
+
+# Why: The core ML model used for prediction (train_model.py)
 xgboost
+
+# Why: Often required for data preprocessing or pipeline support alongside XGBoost
+scikit-learn
+
+# --- Testing ---
+# Why: Required to run the unit tests in the CI pipeline
+pytest
