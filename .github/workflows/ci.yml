@@ -1,0 +1,48 @@
+name: Python Pricing Engine CI
+
+# Trigger on push to main branch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Check out the code from the repo
+    - uses: actions/checkout@v3
+
+    # 2. Set up Python environment
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    # 3. Install Dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Install the app dependencies
+        if [ -f server/requirements.txt ]; then pip install -r server/requirements.txt; fi
+        # Explicitly install testing tools (just in case they aren't in requirements.txt)
+        pip install pytest flask flask-cors pandas scikit-learn xgboost
+
+    # 4. Generate Data & Train Model (Reproducibility Check)
+    # The CI server is empty. We must generate the CSV and Model JSON 
+    # to prove that our code works from scratch.
+    - name: Train AI Model
+      run: |
+        cd server
+        python generate_data.py
+        python train_model.py
+
+    # 5. Run the Unit Tests
+    - name: Run Pytest
+      run: |
+        cd server
+        # We add the current directory to PYTHONPATH so tests can find 'services.py'
+        export PYTHONPATH=$PYTHONPATH:.
+        pytest
